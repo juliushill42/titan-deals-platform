@@ -1,0 +1,18 @@
+{
+  "scraper_target_manifest": {
+    "ingestion_schemas": [
+      {
+        "domain_scope": "retail_clearance_endpoints",
+        "selectors": {
+          "item_sku": "div.product-id-spec",
+          "title": "h1.product-title, span.product-name",
+          "baseline_price": "span.price-regular-original",
+          "markdown_price": "span.price-clearance-sale",
+          "stock_availability": "div.inventory-count-status"
+        },
+        "stock_attr": "data-stock",
+        "min_discount_pct_to_alert": 50.0
+      }
+    ]
+  }
+}

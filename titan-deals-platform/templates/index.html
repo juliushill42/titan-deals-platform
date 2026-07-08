@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Deals Search</title>
+  <link rel="stylesheet" href="/static/core_minimal.css">
+</head>
+<body>
+  <div class="wrap">
+    <h1>Deals Search</h1>
+    <form class="search" method="get" action="/search">
+      <input type="text" name="q" value="{{ query|default('') }}" placeholder="Search clearance items..." autofocus>
+      <button type="submit">Search</button>
+    </form>
+
+    {% if query is defined %}
+      <div class="count">{{ results|length }} result{{ '' if results|length == 1 else 's' }} for "{{ query }}" ({{ elapsed_ms }}ms)</div>
+      {% if results %}
+        {% for r in results %}
+        <div class="deal">
+          <div class="deal-title">{{ r.title }}</div>
+          <div class="deal-meta">SKU {{ r.item_sku }} &middot; {{ r.domain_scope }} &middot; stock: {{ r.stock_availability or 'unknown' }}</div>
+          <div>
+            <span class="price-old">${{ '%.2f'|format(r.baseline_price) }}</span>
+            <span class="price-new">${{ '%.2f'|format(r.markdown_price) }}</span>
+            <span class="discount">({{ r.discount_pct }}% off)</span>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty">No matches. Try a different search term.</div>
+      {% endif %}
+    {% else %}
+      <div class="empty">Enter a search term to find clearance deals.</div>
+    {% endif %}
+  </div>
+</body>
+</html>
