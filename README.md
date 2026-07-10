@@ -1,33 +1,67 @@
-# Titan Deals Platform
+# Titan Deals — Frontend
 
-A hyper-local clearance and markdown search engine designed for ultra-low bandwidth mobile environments. Built with a zero-JS server-side-rendered architecture, config-driven HTML ingestion, and an embedded SQLite FTS5 index executing queries in **< 1ms**.
+Retail intelligence platform frontend. Search-first UI over an embedded
+SQLite FTS5 backend — no cloud search service, no heavyweight JS runtime
+on the data path.
 
-## ⚡ Core Architectural Moats
+## Stack
 
-* **Zero Infrastructure Cost:** Completely eliminates reliance on expensive third-party scraping APIs or cloud-hosted search engines (like Algolia or Elasticsearch). It runs entirely on standard Python and local storage.
-* **Legal Decoupling:** The ingestion engine processes local HTML files directly (e.g., partner feeds, offline exports, or local browser caches). Sourcing compliance stays completely in the runner's hands, safeguarding the core software module.
-* **Extreme Performance:** Bypasses client-side JavaScript framework bloat. Delivers pure semantic HTML and hand-crafted CSS, running comfortably under a 50ms total network budget.
+- Next.js 15 (App Router) + TypeScript
+- Tailwind CSS
+- Framer Motion (minimal, purposeful)
+- Lucide icons
 
----
+## Pages
 
-## 🛠️ Components
+- `/` — landing page: hero, live stats, architecture/moat section, trending
+- `/deals` — search results with filters (store, discount, distance, category)
+- `/dashboard` — live metrics, regional activity, recent ingestion table
 
-* `scraper_config.json` — Schema defining target CSS selectors (`item_sku`, `title`, `baseline_price`, `markdown_price`, `stock_availability`) and custom discount thresholds.
-* `ingest.py` — Config-driven parser utilizing BeautifulSoup4 to process HTML dumps, compute markdown price metrics, flag deep discounts, and commit them to the database.
-* `schema.sql` — Core `deals` table equipped with an FTS5 virtual search table kept instantly in sync using database triggers.
-* `search_app.py` — Lightweight Flask application utilizing SQLite FTS5 token prefix match indexing with a fast SQL `LIKE` fallback.
-* `templates/index.html` + `static/core_minimal.css` — High-speed, semantic UI with zero tracking scripts, external fonts, or runtime dependencies.
-
----
-
-## 🚀 Quick Start
+## Run locally
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt --break-system-packages
+npm install
+npm run dev
+```
 
-# Parse local HTML pages into the local SQLite database
-python3 ingest.py --config scraper_config.json --html-dir ./pages --db deals.db
+Visit `http://localhost:3000`.
 
-# Start the high-speed local search server
-python3 search_app.py
+## Deploy to Vercel
+
+1. Push this repo to GitHub:
+   ```bash
+   git init
+   git remote add origin https://github.com/juliushill42/titan-deals-platform.git
+   git add .
+   git commit -m "Add Titan Deals intelligence frontend"
+   git branch -M main
+   git push -u origin main
+   ```
+2. In Vercel: **Import Repository** → framework auto-detected as Next.js.
+3. Set the custom domain to `deals.titanuniversalai.com`.
+4. Copy `.env.example` to `.env.local` and point `NEXT_PUBLIC_TITAN_API_URL`
+   at the live FastAPI/SQLite FTS5 backend once it's wired in.
+
+## Wiring in real data
+
+All deal, stat, and heat map data currently lives in `lib/data.ts` as typed
+mock data matching the shape the backend should return. Replace the static
+imports in `app/deals/page.tsx`, `app/dashboard/page.tsx`, and
+`components/Stats.tsx` with fetch calls to `NEXT_PUBLIC_TITAN_API_URL` —
+the types in `lib/data.ts` (`Deal`, `stats` shape, `heatmap` shape) are the
+contract the backend should match.
+
+## Design system
+
+| Token      | Value     |
+|------------|-----------|
+| Background | `#050505` |
+| Panels     | `#101010` |
+| Borders    | `#202020` |
+| Titan Cyan | `#00D8FF` |
+| Highlight  | `#00FFFF` |
+| Green      | `#2EEA7D` |
+
+Headings/body: Geist. Numbers/data: JetBrains Mono (loaded via CSS
+variables in `app/globals.css` — swap in `next/font` for production if
+you want self-hosted font files instead of a CDN).
