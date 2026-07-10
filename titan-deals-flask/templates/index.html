@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Titan Deals — Retail Intelligence</title>
+  <meta name="description" content="Search millions of clearance and markdown items in milliseconds. Embedded SQLite FTS5 search, zero cloud dependency, zero client JavaScript.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='core_minimal.css') }}">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a href="/" class="brand">TITAN<span class="accent">DEALS</span></a>
+      <nav class="main-nav">
+        <a href="/">Search</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="#architecture">Architecture</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <div class="wrap">
+        <p class="eyebrow">Retail Intelligence</p>
+        <h1>Not Another Coupon Site.</h1>
+        <p class="lede">
+          Search millions of dollars of markdown inventory using an embedded
+          search engine that runs in milliseconds &mdash; not a cloud search service.
+        </p>
+
+        <form class="search-form" role="search" method="get" action="/">
+          <input
+            type="text"
+            name="q"
+            value="{{ query|default('') }}"
+            placeholder='Search &quot;dewalt&quot; or any brand, item, category&hellip;'
+            aria-label="Search deals"
+            autofocus
+          >
+
+          <select name="store" aria-label="Filter by store">
+            <option value="">All stores</option>
+            {% for store in stores %}
+            <option value="{{ store }}" {% if selected_store == store %}selected{% endif %}>{{ store }}</option>
+            {% endfor %}
+          </select>
+
+          <select name="category" aria-label="Filter by category">
+            <option value="">All categories</option>
+            {% for cat in categories %}
+            <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+          </select>
+
+          <select name="min_discount" aria-label="Minimum discount">
+            <option value="">Any discount</option>
+            <option value="50" {% if min_discount == 50 %}selected{% endif %}>50%+</option>
+            <option value="60" {% if min_discount == 60 %}selected{% endif %}>60%+</option>
+            <option value="70" {% if min_discount == 70 %}selected{% endif %}>70%+</option>
+            <option value="80" {% if min_discount == 80 %}selected{% endif %}>80%+</option>
+          </select>
+
+          <button type="submit">Search</button>
+        </form>
+
+        <p class="store-strip">
+          {% for store in stores %}{{ store }}{% if not loop.last %} &bull; {% endif %}{% endfor %}
+        </p>
+
+        <dl class="hero-stats">
+          <div>
+            <dt>Deals Indexed</dt>
+            <dd>{{ stats.deals_indexed }}</dd>
+          </div>
+          <div>
+            <dt>Search</dt>
+            <dd class="accent">{{ stats.latency_ms }}ms</dd>
+          </div>
+          <div>
+            <dt>Avg Savings</dt>
+            <dd class="green">{{ stats.avg_discount }}%</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="results">
+      <div class="wrap">
+        <p class="results-meta">
+          {{ deals|length }} result{{ 's' if deals|length != 1 else '' }}
+          {% if query %} for &ldquo;{{ query }}&rdquo;{% endif %}
+          &middot; {{ stats.latency_ms }}ms
+        </p>
+
+        {% if deals %}
+        <div class="deal-grid">
+          {% for deal in deals %}
+          <article class="deal-card">
+            <p class="deal-store">
+              <span class="dot" data-store="{{ deal.store }}"></span>
+              {{ deal.store }}
+            </p>
+            <h3 class="deal-title">{{ deal.title }}</h3>
+            <div class="deal-price-row">
+              <div>
+                <p class="msrp">MSRP ${{ '%.2f'|format(deal.msrp) }}</p>
+                <p class="price">${{ '%.2f'|format(deal.price) }}</p>
+              </div>
+              <span class="discount-badge">{{ deal.discount }}% OFF</span>
+            </div>
+            <div class="deal-meta">
+              <span>{{ deal.city }}, {{ deal.state }}</span>
+              <span>{{ deal.updated_minutes_ago }}m ago</span>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+
+        {% if has_more %}
+        <form method="get" action="/" class="load-more">
+          {% for key, val in request.args.items() %}{% if key != 'page' %}<input type="hidden" name="{{ key }}" value="{{ val }}">{% endif %}{% endfor %}
+          <input type="hidden" name="page" value="{{ next_page }}">
+          <button type="submit">Load more results</button>
+        </form>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+          <p>No deals match that search.</p>
+          <p class="muted">Try a different term, or clear your filters and search again.</p>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section id="architecture" class="architecture">
+      <div class="wrap">
+        <p class="eyebrow center">The Moat</p>
+        <h2 class="center">The Architecture</h2>
+        <p class="lede center">
+          The search engine isn&rsquo;t the moat. The deals aren&rsquo;t the moat.
+          The architecture is the moat.
+        </p>
+
+        <div class="pipeline">
+          <div class="pipeline-stage">Partner HTML</div>
+          <div class="pipeline-arrow">&darr;</div>
+          <div class="pipeline-stage">Config Engine</div>
+          <div class="pipeline-arrow">&darr;</div>
+          <div class="pipeline-stage">Normalization</div>
+          <div class="pipeline-arrow">&darr;</div>
+          <div class="pipeline-stage">SQLite FTS5</div>
+          <div class="pipeline-arrow">&darr;</div>
+          <div class="pipeline-stage">Instant Search</div>
+          <div class="pipeline-timing">{{ stats.latency_ms }}ms average</div>
+        </div>
+
+        <div class="compare-grid">
+          <div class="compare-col">
+            <h3>Traditional Platforms</h3>
+            <ul>
+              <li>Cloud Search</li>
+              <li>Cloud APIs</li>
+              <li>Cloud Crawlers</li>
+              <li>Complex Infrastructure</li>
+              <li>Large Bills</li>
+            </ul>
+          </div>
+          <div class="compare-col accent-col">
+            <h3>Titan Deals</h3>
+            <ul>
+              <li>Embedded Index</li>
+              <li>SQLite FTS5</li>
+              <li>Local Processing</li>
+              <li>Config Driven</li>
+              <li>Runs Anywhere</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="metric-grid">
+          <div><span class="metric-num">&lt;1ms</span><span class="metric-label">Search</span></div>
+          <div><span class="metric-num">0</span><span class="metric-label">External Search Services</span></div>
+          <div><span class="metric-num">0</span><span class="metric-label">JS Framework Required</span></div>
+          <div><span class="metric-num">1</span><span class="metric-label">SQLite Database</span></div>
+          <div><span class="metric-num">100%</span><span class="metric-label">Server Rendered</span></div>
+          <div><span class="metric-num">50ms</span><span class="metric-label">Network Budget</span></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <div>
+        <p class="brand small">TITAN<span class="accent">DEALS</span></p>
+        <p class="muted">Retail Intelligence Platform</p>
+      </div>
+      <nav class="footer-nav">
+        <a href="/api">API</a>
+        <a href="#architecture">Architecture</a>
+        <a href="/docs">Documentation</a>
+        <a href="https://github.com/juliushill42/titan-deals-platform">GitHub</a>
+      </nav>
+    </div>
+  </footer>
+
+</body>
+</html>
